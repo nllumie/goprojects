@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
+	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
@@ -12,22 +10,28 @@ type helloWorldResponse struct {
 }
 
 func main() {
-	port := 8080
+	e := echo.New()
 
-	http.HandleFunc("/helloworld", helloWorldHandler)
+	e.GET("/hello", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, helloWorldResponse{
+			Message: "Hello, World!",
+		})
+	})
 
-	log.Printf("Server starting on port %v\n", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	e.GET("\request", func(c echo.Context) error {
+		name := c.QueryParam("name")
 
-}
+		if name == "" {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"error": "parameter 'name' is empty",
+			})
+		}
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "received request",
+			"name":    name,
+		})
 
-func helloWorldHandler(w http.ResponseWriter, r *http.Request) {
-	response := helloWorldResponse{Message: "Hello World"}
-	data, err := json.Marshal(response)
-	if err != nil {
-		panic("Ooops")
-	}
+	})
 
-	fmt.Fprint(w, string(data))
-
+	e.Logger.Fatal(e.Start(":8080"))
 }
